@@ -1,0 +1,627 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Fair consent</title>
+<meta name="description" content="A playground for cookie banners that are friendly and fair. Every yes opens the blinds a little more.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Sora:wght@400;600&family=Fredoka:wght@600&family=Nunito+Sans:wght@400;600;700&family=Manrope:wght@400;600;700&family=IBM+Plex+Mono:wght@400&display=swap">
+<style>
+  /* v2, 25 Nov 2026: three banner styles (Night, Paper, Blueprint), each on its own kind of website.
+     The tool around the banner (settings, honesty check) stays neutral. */
+  :root {
+    --bg: #f4f4f2;
+    --surface: #ffffff;
+    --line: #dcdcd6;
+    --line-strong: #b9b9b1;
+    --text: #1d1d1b;
+    --text-2: #5f5f5a;
+    --text-3: #8a8a83;
+    --accent: #2b2b29;
+    --pass: #2f7a4f;
+    --fail: #b3402f;
+    --radius: 12px;
+    --font: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--text); font: 14px/1.5 var(--font); }
+  button { font: inherit; color: inherit; }
+  a { color: inherit; }
+
+  .page { max-width: 1200px; margin: 0 auto; padding: 32px 24px 48px; }
+  .intro h1 { margin: 0; font-size: 28px; line-height: 36px; font-weight: 600; }
+  .intro p { margin: 4px 0 0; color: var(--text-2); max-width: 560px; }
+
+  .layout { display: grid; grid-template-columns: 300px 1fr; gap: 24px; margin-top: 24px; align-items: start; }
+  .panel { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 20px; }
+
+  /* Settings */
+  .group-title { margin: 0; font-size: 14px; line-height: 20px; font-weight: 600; }
+  .group-desc { margin: 0 0 12px; font-size: 12px; line-height: 16px; color: var(--text-3); }
+  .divider { height: 1px; margin: 20px 0; background: var(--line); border: 0; }
+  .hint { margin: 6px 0 0; font-size: 12px; line-height: 16px; color: var(--text-2); }
+  .presets { display: flex; gap: 8px; margin-bottom: 20px; }
+  .presets button { flex: 1; padding: 8px 10px; border: 1px solid var(--line-strong); background: var(--surface); border-radius: 99px; cursor: pointer; font-weight: 500; }
+  .presets button:hover { border-color: var(--text-2); }
+  .control { border: 0; margin: 0 0 16px; padding: 0; }
+  .control legend { padding: 0; margin-bottom: 6px; font-size: 12px; font-weight: 500; color: var(--text-2); }
+  .seg { display: flex; gap: 4px; background: var(--bg); padding: 4px; border-radius: 99px; }
+  .seg label { flex: 1; position: relative; text-align: center; padding: 6px 8px; border-radius: 99px; cursor: pointer; font-size: 12px; line-height: 16px; color: var(--text-2); }
+  .seg input { position: absolute; opacity: 0; inset: 0; margin: 0; cursor: pointer; }
+  .seg label:has(input:checked) { background: var(--surface); color: var(--text); box-shadow: 0 1px 2px rgba(0,0,0,.12); }
+  .seg label:has(input:focus-visible) { outline: 2px solid var(--accent); outline-offset: 1px; }
+  .replay { width: 100%; padding: 8px 10px; border: 0; background: none; color: var(--text-2); text-decoration: underline; cursor: pointer; }
+
+  /* ---------- Themes: every banner and site colour comes from these tokens ---------- */
+  .browser[data-theme="night"] {
+    --site-bg: #0b1026; --site-bar: #141b3a; --site-bar-line: #2a3462; --site-pill: #0e1430; --site-pill-text: #a9b0cc; --site-dot: #2f3a6e;
+    --b-card: #182042; --b-border: 1px solid #2a3462; --b-radius: 18px; --b-shadow: 0 12px 40px rgba(0,0,0,.45); --b-shadow-sm: 0 4px 16px rgba(0,0,0,.4);
+    --b-text: #f4eedf; --b-muted: #a9b0cc; --b-faint: #8a93b8; --b-winbg: #141b3a; --b-switch-border: 1px solid #2a3462; --b-switch-radius: 12px;
+    --b-head: 600 19px/26px Sora, sans-serif; --b-font: Sora, sans-serif; --b-small: Sora, sans-serif;
+    --b-btn-text: #f4eedf; --b-btn-bg: transparent; --b-btn-line: #4a5590; --b-btn-bw: 1px; --b-btn-radius: 99px; --b-btn-hover: rgba(244,238,223,.08); --b-btn-weight: 600;
+    --b-primary: #ffc46b; --b-primary-text: #0e1430; --b-primary-line: #ffc46b;
+    --b-toggle-off: #2f3a6e; --b-toggle-on: #ffc46b; --b-knob-on: #0e1430;
+    --b-dot: #2f3a6e; --b-dot-on: #f4eedf; --b-overlay: rgba(5,8,20,.6);
+    --sky: #ffc46b; --person: #3b2d4f; --person-2: #2a2140; --person-stroke: none;
+    --slat: #f4eedf; --slat-edge: #cfc3a4; --slat-w: .6; --slat-r: 1px; --frame: #f4eedf; --frame-w: 2.5;
+  }
+  .browser[data-theme="paper"] {
+    --site-bg: #fff8f2; --site-bar: #ffeee6; --site-bar-line: #f0d6cb; --site-pill: #ffffff; --site-pill-text: #5b5870; --site-dot: #f0c4b4;
+    --b-card: #ffffff; --b-border: 2px solid #1e1b3a; --b-radius: 16px; --b-shadow: 5px 5px 0 #1e1b3a; --b-shadow-sm: 3px 3px 0 #1e1b3a;
+    --b-text: #1e1b3a; --b-muted: #5b5870; --b-faint: #6f6c85; --b-winbg: #d9f0ff; --b-switch-border: 2px solid #1e1b3a; --b-switch-radius: 12px;
+    --b-head: 600 22px/28px Fredoka, sans-serif; --b-font: "Nunito Sans", sans-serif; --b-small: "Nunito Sans", sans-serif;
+    --b-btn-text: #1e1b3a; --b-btn-bg: #ffffff; --b-btn-line: #1e1b3a; --b-btn-bw: 2px; --b-btn-radius: 12px; --b-btn-hover: #fff3c4; --b-btn-weight: 700;
+    --b-primary: #ff6b4a; --b-primary-text: #1e1b3a; --b-primary-line: #1e1b3a;
+    --b-toggle-off: #d8d4e6; --b-toggle-on: #1e1b3a; --b-knob-on: #ffc233;
+    --b-dot: #d8d4e6; --b-dot-on: #1e1b3a; --b-overlay: rgba(30,27,58,.45);
+    --sky: #8fd3ff; --person: #ffb38a; --person-2: #ff6b4a; --person-stroke: #1e1b3a;
+    --slat: #ffffff; --slat-edge: #1e1b3a; --slat-w: 1.2; --slat-r: 3px; --frame: #ffc233; --frame-w: 5;
+  }
+  .browser[data-theme="blueprint"] {
+    --site-bg: #f5f8fe; --site-bar: #ffffff; --site-bar-line: #c9d8f5; --site-pill: #f5f8fe; --site-pill-text: #4a5b8c; --site-dot: #c9d8f5;
+    --b-card: #ffffff; --b-border: 1px solid #0664de; --b-radius: 4px; --b-shadow: none; --b-shadow-sm: none;
+    --b-text: #0b1f5c; --b-muted: #4a5b8c; --b-faint: #5b6b99; --b-winbg: #f5f8fe; --b-switch-border: 1px solid #c9d8f5; --b-switch-radius: 4px;
+    --b-head: 700 19px/26px Manrope, sans-serif; --b-font: Manrope, sans-serif; --b-small: "IBM Plex Mono", monospace;
+    --b-btn-text: #0664de; --b-btn-bg: #ffffff; --b-btn-line: #0664de; --b-btn-bw: 1px; --b-btn-radius: 4px; --b-btn-hover: #eaf1fd; --b-btn-weight: 600;
+    --b-primary: #0664de; --b-primary-text: #ffffff; --b-primary-line: #0664de;
+    --b-toggle-off: #c9d8f5; --b-toggle-on: #0664de; --b-knob-on: #ffffff;
+    --b-dot: #c9d8f5; --b-dot-on: #0664de; --b-overlay: rgba(11,31,92,.35);
+    --sky: #ffffff; --person: #eaf1fd; --person-2: #eaf1fd; --person-stroke: #0664de;
+    --slat: #ffffff; --slat-edge: #0664de; --slat-w: .8; --slat-r: 0px; --frame: #0664de; --frame-w: 1.5;
+  }
+
+  .browser[data-theme="simple"] {
+    --site-bg: #ffffff; --site-bar: #f7f7f5; --site-bar-line: #e3e3e0; --site-pill: #ffffff; --site-pill-text: #6b6b66; --site-dot: #dcdcd6;
+    --b-card: #ffffff; --b-border: 1px solid #e3e3e0; --b-radius: 12px; --b-shadow: 0 8px 30px rgba(0,0,0,.12); --b-shadow-sm: 0 2px 8px rgba(0,0,0,.1);
+    --b-text: #111111; --b-muted: #2b2b29; --b-faint: #6b6b66; --b-winbg: #f6cf45; --b-switch-border: 1px solid #e3e3e0; --b-switch-radius: 8px;
+    --b-head: 700 24px/30px system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; --b-font: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; --b-small: system-ui, -apple-system, sans-serif;
+    --b-btn-text: #111111; --b-btn-bg: #ffffff; --b-btn-line: #e3e3e0; --b-btn-bw: 0px; --b-btn-radius: 0; --b-btn-hover: #f7f7f5; --b-btn-weight: 400;
+    --b-primary: #f6cf45; --b-primary-text: #111111; --b-primary-line: #f6cf45;
+    --b-toggle-off: #dcdcd6; --b-toggle-on: #111111; --b-knob-on: #f6cf45;
+    --b-dot: #dcdcd6; --b-dot-on: #111111; --b-overlay: rgba(17,17,17,.4);
+    --sky: #ffffff; --person: #111111; --person-2: #111111; --person-stroke: none;
+    --slat: #ffffff; --slat-edge: #111111; --slat-w: 1; --slat-r: 0px; --frame: #111111; --frame-w: 2.5;
+  }
+  /* Simple: the window is a small square tile on the right, the text wraps around it,
+     and the buttons sit edge to edge along the bottom like a row of cells. */
+  [data-theme="simple"] .banner:not(.bar) { display: flow-root; width: 400px; }
+  [data-theme="simple"] .banner:not(.bar) .win { float: right; width: 112px; margin: 24px 24px 8px 16px; padding: 12px 8px 10px; gap: 4px; }
+  [data-theme="simple"] .win svg { width: 84px; }
+  [data-theme="simple"] .readout { font-size: 11px; line-height: 14px; color: #111; }
+  [data-theme="simple"] .body { padding: 24px 24px 0; }
+  [data-theme="simple"] .body p.desc { font-size: 14px; line-height: 22px; }
+  [data-theme="simple"] .actions { clear: both; gap: 0; margin: 20px -24px 0; border-top: 1px solid #e3e3e0; }
+  [data-theme="simple"] .btn { padding: 16px 8px; font-size: 15px; line-height: 20px; }
+  [data-theme="simple"] .btn + .btn { border-left: 1px solid #e3e3e0; }
+  [data-theme="simple"] .btn.primary { font-weight: 700; }
+  [data-theme="simple"] .btn.faint { flex: 1; padding: 16px 8px; font-size: 13px; }
+  [data-theme="simple"] .dots { display: none; }   /* "Step 1 of 3" already says where you are */
+
+  /* Fake website shell */
+  .stage { display: flex; flex-direction: column; gap: 24px; min-width: 0; }
+  .browser { position: relative; height: 600px; background: var(--site-bg); border: 1px solid var(--line); border-radius: var(--radius); overflow: hidden; }
+  .browser-bar { display: flex; align-items: center; gap: 6px; height: 41px; padding: 0 14px; border-bottom: 1px solid var(--site-bar-line); background: var(--site-bar); }
+  .browser-bar i { width: 10px; height: 10px; border-radius: 99px; background: var(--site-dot); }
+  .browser-bar span { margin-left: 12px; padding: 2px 12px; border-radius: 99px; background: var(--site-pill); color: var(--site-pill-text); font-size: 12px; }
+  .site { height: calc(100% - 41px); overflow: hidden; padding: 20px 28px; }
+  .site nav { display: flex; justify-content: space-between; align-items: center; gap: 16px; }
+  .site nav span { display: flex; gap: 20px; font-size: 13px; }
+
+  /* Site: Lumen, a streaming service (Night) */
+  .s-night { color: #a9b0cc; font-family: Sora, sans-serif; }
+  .s-night nav b { color: #f4eedf; font-weight: 600; letter-spacing: .08em; }
+  .s-night .hero { display: flex; flex-direction: column; justify-content: flex-end; height: 220px; margin-top: 20px; padding: 28px; border-radius: 16px;
+    background: radial-gradient(circle at 78% 35%, rgba(255,196,107,.55), transparent 28%), linear-gradient(120deg, #1b2350, #3b2d4f); }
+  .s-night .kicker { margin: 0; font-size: 12px; color: #ffc46b; }
+  .s-night h2 { margin: 2px 0 0; color: #f4eedf; font-size: 28px; line-height: 36px; font-weight: 600; }
+  .s-night .hero p { margin: 2px 0 0; }
+  .s-night .play { align-self: flex-start; margin-top: 14px; padding: 6px 18px; border-radius: 99px; background: #f4eedf; color: #0e1430; font-size: 13px; font-weight: 600; }
+  .s-night .row-title { margin: 24px 0 10px; color: #f4eedf; font-weight: 600; }
+  .s-night .posters { display: grid; grid-template-columns: repeat(6, 1fr); gap: 12px; }
+  .s-night .posters i { height: 150px; border-radius: 10px; background: linear-gradient(160deg, #2a3462, #182042); }
+  .s-night .posters i:nth-child(2) { background: linear-gradient(160deg, #6b3a5a, #2a2140); }
+  .s-night .posters i:nth-child(3) { background: linear-gradient(160deg, #c4864a, #3b2d4f); }
+  .s-night .posters i:nth-child(4) { background: linear-gradient(160deg, #2f5a6e, #141b3a); }
+  .s-night .posters i:nth-child(5) { background: linear-gradient(160deg, #8a93b8, #2a3462); }
+  .s-night .posters i:nth-child(6) { background: linear-gradient(160deg, #4a2d3f, #0e1430); }
+
+  /* Site: Acme Coffee, a small shop (Paper) */
+  .s-paper { color: #5b5870; font-family: "Nunito Sans", sans-serif; }
+  .s-paper nav b { color: #1e1b3a; font: 600 18px/24px Fredoka, sans-serif; }
+  .s-paper .hero { display: flex; justify-content: space-between; align-items: center; gap: 24px; margin-top: 20px; padding: 28px; border: 2px solid #1e1b3a; border-radius: 16px; background: #ffe3d8; }
+  .s-paper h2 { margin: 0; color: #1e1b3a; font: 600 30px/36px Fredoka, sans-serif; }
+  .s-paper .hero p { margin: 4px 0 0; }
+  .s-paper .cta { display: inline-block; margin-top: 14px; padding: 6px 16px; border: 2px solid #1e1b3a; border-radius: 12px; background: #ffc233; color: #1e1b3a; font-weight: 700; font-size: 13px; }
+  .s-paper .sun { flex: none; width: 96px; height: 96px; border: 2px solid #1e1b3a; border-radius: 99px; background: #ffc233; }
+  .s-paper .cards { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-top: 20px; }
+  .s-paper .cards div { display: flex; flex-direction: column; gap: 2px; padding: 10px; border: 2px solid #1e1b3a; border-radius: 12px; background: #fff; }
+  .s-paper .cards i { height: 80px; margin-bottom: 8px; border: 2px solid #1e1b3a; border-radius: 8px; background: #8fd3ff; }
+  .s-paper .cards div:nth-child(2) i { background: #ffc233; }
+  .s-paper .cards div:nth-child(3) i { background: #ff6b4a; }
+  .s-paper .cards b { color: #1e1b3a; }
+
+  /* Site: Atlas Bank, online banking (Blueprint) */
+  .s-blueprint { color: #4a5b8c; font-family: Manrope, sans-serif; }
+  .s-blueprint nav b { display: flex; align-items: center; gap: 8px; color: #0b1f5c; font-weight: 700; }
+  .s-blueprint nav b i { width: 18px; height: 18px; border: 1.5px solid #0664de; border-radius: 2px; background: linear-gradient(#0664de, #0664de) center/1.5px 100% no-repeat; }
+  .s-blueprint .hero { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; align-items: center; margin-top: 20px; padding: 24px; border: 1px solid #c9d8f5; border-radius: 4px; background: #fff; }
+  .s-blueprint .kicker { margin: 0; font: 400 11px/16px "IBM Plex Mono", monospace; color: #0664de; letter-spacing: .04em; }
+  .s-blueprint h2 { margin: 4px 0 0; color: #0b1f5c; font-size: 28px; line-height: 36px; font-weight: 700; }
+  .s-blueprint .hero p { margin: 4px 0 0; }
+  .s-blueprint .chart { width: 100%; height: 120px; }
+  .s-blueprint .tiles { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-top: 16px; }
+  .s-blueprint .tiles div { display: flex; flex-direction: column; gap: 4px; padding: 16px; border: 1px solid #c9d8f5; border-radius: 4px; background: #fff; font-size: 12px; }
+  .s-blueprint .tiles b { color: #0b1f5c; font: 400 18px/24px "IBM Plex Mono", monospace; }
+
+  /* Site: Hireboard, a plain job board (Simple) */
+  .s-simple { color: #6b6b66; }
+  .s-simple nav b { color: #111; font-size: 18px; }
+  .s-simple .search { display: flex; gap: 8px; margin-top: 24px; }
+  .s-simple .search span { flex: 1; padding: 10px 14px; border: 1px solid #dcdcd6; border-radius: 8px; color: #8a8a83; }
+  .s-simple .search b { padding: 10px 20px; border-radius: 8px; background: #111; color: #fff; }
+  .s-simple .job { display: flex; flex-direction: column; gap: 2px; padding: 16px 0; border-bottom: 1px solid #e3e3e0; }
+  .s-simple .job:first-of-type { margin-top: 12px; }
+  .s-simple .job b { color: #111; font-size: 16px; }
+  .s-simple .tags { display: flex; gap: 6px; margin-top: 6px; }
+  .s-simple .tags i { padding: 2px 10px; border-radius: 99px; background: #f4f4f2; color: #2b2b29; font-size: 12px; font-style: normal; }
+
+  /* Banner */
+  .overlay { position: absolute; inset: 41px 0 0; background: var(--b-overlay); }
+  .banner { position: absolute; left: 16px; bottom: 16px; width: 360px; max-width: calc(100% - 32px); background: var(--b-card); color: var(--b-text); border: var(--b-border); border-radius: var(--b-radius); box-shadow: var(--b-shadow); overflow: hidden; font-family: var(--b-font); }
+  .banner.popup { left: 50%; top: calc(50% + 20px); bottom: auto; transform: translate(-50%, -50%); }
+  .banner.bar { left: 0; right: 0; bottom: 0; width: auto; max-width: none; border-radius: 0; border-left: 0; border-right: 0; border-bottom: 0; box-shadow: none; display: grid; grid-template-columns: 180px 1fr; }
+  .banner[hidden], .overlay[hidden], .reopen[hidden] { display: none; }
+
+  .win { display: flex; flex-direction: column; align-items: center; gap: 6px; padding: 16px 16px 12px; background: var(--b-winbg); }
+  .win svg { width: 140px; height: auto; display: block; }
+  .bar .win { justify-content: center; }
+  .readout { margin: 0; font: 12px/16px var(--b-small); color: var(--b-muted); text-align: center; }
+  .slat { transform-box: fill-box; transform-origin: top; transition: transform .6s cubic-bezier(.3,.7,.2,1); }
+  @media (prefers-reduced-motion: reduce) { .slat { transition: none; } }
+
+  .body { padding: 16px 20px 20px; }
+  .step-count { margin: 0 0 2px; font: 12px/16px var(--b-small); color: var(--b-faint); }
+  .body h3 { margin: 0; font: var(--b-head); }
+  .body p.desc { margin: 4px 0 0; }
+  .body p.desc + p.desc { margin-top: 10px; }
+  .body p.desc { color: var(--b-muted); font-size: 13px; line-height: 20px; }
+  .later { margin: 10px 0 0; font: 12px/16px var(--b-small); color: var(--b-faint); }
+  .tools li + li { margin-top: 4px; }
+  .tools { margin: 10px 0 0; padding: 0; list-style: none; font: 12px/16px var(--b-small); color: var(--b-faint); }
+  .switch { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-top: 12px; padding: 10px 12px; border: var(--b-switch-border); border-radius: var(--b-switch-radius); cursor: pointer; font-weight: 600; font-size: 13px; }
+  .switch input { flex: none; appearance: none; width: 36px; height: 20px; margin: 0; border-radius: 99px; background: var(--b-toggle-off); position: relative; cursor: pointer; transition: background .2s; }
+  .switch input::after { content: ""; position: absolute; top: 2px; left: 2px; width: 16px; height: 16px; border-radius: 99px; background: #fff; transition: transform .2s, background .2s; }
+  .switch input:checked { background: var(--b-toggle-on); }
+  .switch input:checked::after { transform: translateX(16px); background: var(--b-knob-on); }
+  .switch input:focus-visible { outline: 2px solid var(--b-text); outline-offset: 2px; }
+  .actions { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-top: 16px; }
+  .btn { flex: 1; padding: 9px 12px; border: var(--b-btn-bw) solid var(--b-btn-line); border-radius: var(--b-btn-radius); background: var(--b-btn-bg); color: var(--b-btn-text); font: var(--b-btn-weight) 13px/18px var(--b-font); cursor: pointer; white-space: nowrap; }
+  .btn:hover { background: var(--b-btn-hover); }
+  .btn:focus-visible { outline: 2px solid var(--b-text); outline-offset: 2px; }
+  .btn.primary { background: var(--b-primary); border-color: var(--b-primary-line); color: var(--b-primary-text); }
+  .btn.faint { flex: 0 0 auto; padding: 4px; border: 0; background: none; color: var(--b-faint); font-size: 11px; font-weight: 400; text-decoration: underline; }
+  .dots { display: flex; gap: 4px; justify-content: center; margin-top: 12px; }
+  .dots i { width: 6px; height: 6px; border-radius: 99px; background: var(--b-dot); }
+  .dots i.on { background: var(--b-dot-on); }
+
+  .reopen { position: absolute; left: 16px; bottom: 16px; display: flex; align-items: center; gap: 8px; padding: 6px 12px 6px 6px; border: var(--b-border); border-radius: 99px; background: var(--b-card); color: var(--b-text); box-shadow: var(--b-shadow-sm); cursor: pointer; font: 600 12px/16px var(--b-font); }
+  .reopen svg { width: 28px; height: 28px; }
+
+  /* Honesty check */
+  .checks-head { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; }
+  .checks-head h2 { margin: 0; font-size: 18px; line-height: 24px; }
+  .score { font-weight: 600; }
+  .checks { list-style: none; margin: 12px 0 0; padding: 0; }
+  .checks li { border-top: 1px solid var(--line); }
+  .checks details summary { display: flex; align-items: center; gap: 10px; padding: 10px 0; cursor: pointer; list-style: none; }
+  .checks details summary::-webkit-details-marker { display: none; }
+  .checks .mark { flex: none; width: 20px; height: 20px; border-radius: 99px; display: grid; place-items: center; color: #fff; }
+  .checks .mark svg { width: 12px; height: 12px; }
+  .checks .pass .mark { background: var(--pass); }
+  .checks .fail .mark { background: var(--fail); }
+  .checks .chev { margin-left: auto; color: var(--text-3); transition: transform .2s; }
+  .checks details[open] .chev { transform: rotate(180deg); }
+  .checks .why { margin: 0 0 12px 30px; color: var(--text-2); }
+  .checks .why a { color: var(--text-3); font-size: 12px; }
+  .note { margin: 12px 0 0; font-size: 12px; color: var(--text-3); }
+
+  @media (max-width: 900px) {
+    .layout { grid-template-columns: 1fr; }
+    .banner.bar { grid-template-columns: 1fr; }
+    .s-night .posters { grid-template-columns: repeat(3, 1fr); }
+    .s-blueprint .hero { grid-template-columns: 1fr; }
+    .s-blueprint .chart { display: none; }
+  }
+  @media (max-width: 480px) {
+    .page { padding: 20px 16px 32px; }
+    .site { padding: 16px; }
+    .site nav span { display: none; }
+    .s-paper .sun { display: none; }
+    .s-paper .cards, .s-blueprint .tiles { grid-template-columns: 1fr 1fr; }
+    .banner:not(.bar) { left: 8px; right: 8px; width: auto; max-width: none; }
+    .btn:not(.faint) { flex-basis: 100%; }   /* stack all buttons at one width so none looks bigger */
+    [data-theme="simple"] .banner:not(.bar) { width: auto; }
+    [data-theme="simple"] .banner:not(.bar) .win { width: 92px; margin: 20px 20px 8px 12px; }
+    [data-theme="simple"] .win svg { width: 68px; }
+    [data-theme="simple"] .body { padding: 20px 20px 0; }
+    [data-theme="simple"] .body h3 { font-size: 20px; line-height: 26px; }
+    [data-theme="simple"] .actions { margin: 16px -20px 0; }
+    [data-theme="simple"] .btn + .btn { border-left: 0; border-top: 1px solid #e3e3e0; }
+    .banner.popup { left: 50%; right: auto; width: calc(100% - 16px); }
+  }
+</style>
+</head>
+<body>
+<main class="page">
+  <header class="intro">
+    <h1>Fair consent</h1>
+    <p>A cookie banner can be friendly and fair. Every yes opens the blinds a little more, so you can see how much the website gets to see of you.</p>
+  </header>
+
+  <div class="layout">
+    <aside class="panel" aria-label="Banner settings">
+      <p class="group-title">Look</p>
+      <p class="group-desc">Pick a style that suits the website. The style never changes the honesty score.</p>
+      <fieldset class="control">
+        <legend>Style</legend>
+        <div class="seg" id="style"></div>
+        <p class="hint" id="fits"></p>
+      </fieldset>
+
+      <hr class="divider">
+
+      <p class="group-title">Fairness</p>
+      <p class="group-desc">These choices decide the score.</p>
+      <div class="presets">
+        <button type="button" data-preset="tricky">Make it tricky</button>
+        <button type="button" data-preset="fair">Make it fair</button>
+      </div>
+      <form id="settings"></form>
+      <button type="button" class="replay" id="replay">Show the banner again</button>
+    </aside>
+
+    <section class="stage">
+      <div class="browser" id="browser">
+        <div class="browser-bar" aria-hidden="true"><i></i><i></i><i></i><span id="url"></span></div>
+        <div class="site" id="site" aria-hidden="true"></div>
+
+        <div class="overlay" id="overlay" hidden></div>
+        <div class="banner" id="banner" role="dialog" aria-label="Cookie choices">
+          <div class="win">
+            <svg id="window" viewBox="0 0 160 130" aria-hidden="true"></svg>
+            <p class="readout" id="readout" aria-live="polite"></p>
+          </div>
+          <div class="body" id="body"></div>
+        </div>
+        <button type="button" class="reopen" id="reopen" hidden>
+          <svg viewBox="0 0 28 28" aria-hidden="true"><circle cx="14" cy="14" r="14" style="fill:var(--b-winbg)"/><rect x="7" y="7" width="14" height="14" rx="1" style="fill:var(--slat);stroke:var(--frame);stroke-width:1.5"/><path d="M8 10.5h12M8 13.5h12M8 16.5h12" style="stroke:var(--slat-edge);stroke-width:1"/></svg>
+          Cookie choices
+        </button>
+      </div>
+
+      <div class="panel">
+        <div class="checks-head">
+          <h2>Honesty check</h2>
+          <span class="score" id="score"></span>
+        </div>
+        <ul class="checks" id="checks"></ul>
+        <p class="note">Not legal advice. Based on guidance from European privacy regulators, linked under each rule.</p>
+      </div>
+    </section>
+  </div>
+</main>
+
+<script>
+const THEMES = {
+  simple: {
+    label: "Simple", fits: "Fits blogs, job boards, portfolios and small businesses.",
+    url: "hireboard.example", thing: "jobs", needed: "your saved searches",
+    site: `<div class="s-simple">
+      <nav><b>Hireboard</b><span>Jobs &nbsp; Companies &nbsp; Sign in</span></nav>
+      <div class="search"><span>Product designer</span><b>Search</b></div>
+      <div class="job"><b>Product designer</b><span>Example Studio, Berlin</span><div class="tags"><i>Permanent</i><i>Hybrid</i></div></div>
+      <div class="job"><b>Senior UX designer</b><span>Atlas Health, remote</span><div class="tags"><i>Permanent</i><i>Remote</i></div></div>
+      <div class="job"><b>Design systems lead</b><span>Acme Software, London</span><div class="tags"><i>Contract</i><i>On site</i></div></div>
+      <div class="job"><b>UI designer</b><span>Northwind, Amsterdam</span><div class="tags"><i>Permanent</i><i>Hybrid</i></div></div>
+    </div>` },
+  night: {
+    label: "Night", fits: "Fits media, streaming, hotels and dark-mode sites.",
+    url: "lumen.example", thing: "shows", needed: "keeping you signed in",
+    extra: '<circle cx="42" cy="30" r="9" style="fill:#fff1c9"/><path d="M42 10v11" style="stroke:#3b2d4f;stroke-width:1.5"/>',
+    site: `<div class="s-night">
+      <nav><b>LUMEN</b><span>Home &nbsp; Films &nbsp; Series &nbsp; My list</span></nav>
+      <div class="hero"><p class="kicker">Tonight's pick</p><h2>The Quiet Street</h2><p>A small town where one window is always left open.</p><span class="play">Play</span></div>
+      <p class="row-title">Continue watching</p>
+      <div class="posters"><i></i><i></i><i></i><i></i><i></i><i></i></div>
+    </div>` },
+  paper: {
+    label: "Paper", fits: "Fits shops, food, lifestyle and consumer apps.",
+    url: "acme-coffee.example", thing: "coffee", needed: "what's in your basket",
+    extra: '<ellipse cx="45" cy="28" rx="13" ry="6" style="fill:#fff"/>',
+    front: '<path d="M128 110 l3 -10 h12 l3 10 z" style="fill:#ff6b4a;stroke:#1e1b3a;stroke-width:1.2"/><path d="M137 100 q-8 -10 -2 -20 q6 8 2 20 q4 -12 12 -14 q-2 10 -12 14" style="fill:#3fbf7f;stroke:#1e1b3a;stroke-width:1.2"/>',
+    site: `<div class="s-paper">
+      <nav><b>Acme Coffee</b><span>Shop &nbsp; Beans &nbsp; Visit us</span></nav>
+      <div class="hero"><div><h2>Fresh beans, roasted weekly</h2><p>Small batches from three farms we know by name.</p><span class="cta">Shop beans</span></div><div class="sun"></div></div>
+      <div class="cards"><div><i></i><b>House blend</b><span>12.00</span></div><div><i></i><b>Morning light</b><span>14.00</span></div><div><i></i><b>Dark harbour</b><span>13.50</span></div></div>
+    </div>` },
+  blueprint: {
+    label: "Blueprint", fits: "Fits B2B software, finance, health and public services.",
+    url: "atlas-bank.example", thing: "accounts and cards", needed: "keeping you signed in securely",
+    front: '<path d="M17 122 h126 M17 119 v6 M143 119 v6" style="stroke:#0664de;stroke-width:.8;fill:none"/>',
+    site: `<div class="s-blueprint">
+      <nav><b><i></i>Atlas Bank</b><span>Accounts &nbsp; Cards &nbsp; Loans &nbsp; Help</span></nav>
+      <div class="hero">
+        <div><p class="kicker">ACCOUNT OVERVIEW</p><h2>Banking that explains itself</h2><p>See where your money goes, in plain numbers.</p></div>
+        <svg class="chart" viewBox="0 0 240 120" preserveAspectRatio="none"><path d="M0 30h240M0 60h240M0 90h240" stroke="#e8eefb"/><path d="M0 96 L40 84 L80 88 L120 62 L160 66 L200 40 L240 32" fill="none" stroke="#0664de" stroke-width="1.5" vector-effect="non-scaling-stroke"/><path d="M0 96 L40 84 L80 88 L120 62 L160 66 L200 40 L240 32 V120 H0 Z" fill="#0664de" opacity=".08"/></svg>
+      </div>
+      <div class="tiles"><div><span>Current account</span><b>2,480.00</b></div><div><span>Savings</span><b>12,050.00</b></div><div><span>Credit card</span><b>-312.40</b></div></div>
+    </div>` },
+};
+
+const CATS = [
+  { id: "analytics",
+    plain: { title: "Count visits", desc: () => "We count which pages people open and how long they stay. It shows us where people get stuck, so we can make the site faster and easier to use.",
+      no: "The site works the same for you.", toggle: "Yes, count my visits", who: "Only us" },
+    vague: { title: "Performance", desc: () => "Helps us improve our services.", toggle: "Allow performance", who: "Visit counter, click heatmaps" } },
+  { id: "personal",
+    plain: { title: "Remember what you like", desc: t => `We remember what you looked at. Next time you'll see similar ${t.thing} first, so you spend less time searching.`,
+      no: "You see the same suggestions as everyone else.", toggle: "Yes, remember what I like", who: "Only us" },
+    vague: { title: "Functionality", desc: () => "Enhances your experience on our site.", toggle: "Allow functionality", who: "Recommendations, saved preferences" } },
+  { id: "ads",
+    plain: { title: "Ads based on your browsing", desc: () => "Ad companies see what you do on other websites too. You get ads closer to your interests, and the ads help keep this site free.",
+      no: "You still see ads, just not based on you.", toggle: "Yes, show me ads based on my browsing", who: "3 ad companies and 1 social network" },
+    vague: { title: "Partners", desc: () => "Allows our trusted partners to deliver relevant content.", toggle: "Allow partners", who: "Selected partners" } },
+];
+
+const INTRO = {
+  plain: { title: "Use of cookies",
+    desc: t => `We use cookies to see how you use our site, so we can improve it, suggest ${t.thing} you might like and show ads. Some cookies are needed for the site to work, like ${t.needed}, and are always on. The rest are optional. Some are ours, and some come from other companies, such as ad networks.`,
+    ask: "Would you like to accept all cookies, reject them or choose for yourself?" },
+  vague: { title: "We value your privacy", desc: () => "We and our partners use cookies to improve your experience and deliver relevant content." },
+};
+
+const SEES = [
+  "Nothing shared yet",
+  "Sharing 1 of 3",
+  "Sharing 2 of 3",
+  "Sharing all 3",
+];
+
+const CONTROLS = [
+  { key: "layout", label: "Layout", opts: [["box", "Box"], ["bar", "Bar"], ["popup", "Popup"]] },
+  { key: "buttons", label: "Buttons", opts: [["equal", "All equal"], ["accent", "Accept stands out"]] },
+  { key: "reject", label: "Reject all", opts: [["first", "On first screen"], ["hidden", "Only in settings"]] },
+  { key: "wording", label: "Wording", opts: [["plain", "Plain"], ["vague", "Vague"]] },
+  { key: "defaults", label: "Before you choose", opts: [["off", "All off"], ["on", "All on"]] },
+  { key: "reopen", label: "After you choose", opts: [["yes", "Button to change"], ["no", "Nothing"]] },
+];
+
+const PRESETS = {
+  fair: { layout: "box", buttons: "equal", reject: "first", wording: "plain", defaults: "off", reopen: "yes" },
+  tricky: { layout: "popup", buttons: "accent", reject: "hidden", wording: "vague", defaults: "on", reopen: "no" },
+};
+
+const SOURCES = {
+  taskforce: ["EDPB cookie banner taskforce report, 2023", "https://www.edpb.europa.eu/our-work-tools/our-documents/other/report-work-undertaken-cookie-banner-taskforce_en"],
+  consent: ["EDPB guidelines 05/2020 on consent", "https://www.edpb.europa.eu/our-work-tools/our-documents/guidelines/guidelines-052020-consent-under-regulation-2016679_en"],
+  deceptive: ["EDPB guidelines 03/2022 on deceptive design patterns", "https://www.edpb.europa.eu/our-work-tools/our-documents/guidelines/guidelines-032022-deceptive-design-patterns-social-media_en"],
+  cnil: ["CNIL guidelines on cookies", "https://www.cnil.fr/en/cookies-and-other-tracking-devices-cnil-publishes-new-guidelines"],
+  gdpr7: ["GDPR Article 7(3)", "https://gdpr-info.eu/art-7-gdpr/"],
+};
+
+const RULES = [
+  { title: "Saying no is as easy as saying yes", pass: s => s.reject === "first", src: "taskforce",
+    why: "Reject all should sit next to Accept all. When no is hidden in the settings, most people give up and accept." },
+  { title: "Every choice looks equally important", pass: s => s.buttons === "equal", src: "taskforce",
+    why: "A bold Accept next to a faint grey link pushes people toward yes without them noticing." },
+  { title: "Nothing is on before you choose", pass: s => s.defaults === "off", src: "consent",
+    why: "Switched-on toggles are not consent. The blinds should stay closed until the person opens them." },
+  { title: "Plain words", pass: s => s.wording === "plain", src: "deceptive",
+    why: "\"Improve your experience\" hides what happens. Say \"count your visits\" or \"ads that follow you\"." },
+  { title: "The page stays usable", pass: s => s.layout !== "popup", src: "cnil",
+    why: "A popup that blocks the whole page pressures people to click anything just to get through." },
+  { title: "You can change your mind later", pass: s => s.reopen === "yes", src: "gdpr7",
+    why: "Taking consent back should be as easy as giving it, so a small button stays on the page." },
+];
+
+const ICON = {
+  check: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>',
+  x: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"/></svg>',
+  chev: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>',
+};
+
+let theme = "paper";
+let settings = { ...PRESETS.fair };
+let consent = {};
+let step = "intro";   // "intro", 0, 1, 2 or "closed"
+
+const $ = id => document.getElementById(id);
+
+// The window: sky, a theme extra, a person, 8 slats, frame, sill, and anything in front.
+function buildWindow() {
+  const t = THEMES[theme];
+  let slats = "";
+  for (let i = 0; i < 8; i++) {
+    slats += `<rect class="slat" x="20" y="${10 + i * 12.5}" width="120" height="12.5" style="rx:var(--slat-r);fill:var(--slat);stroke:var(--slat-edge);stroke-width:var(--slat-w)"/>`;
+  }
+  $("window").innerHTML = `
+    <rect x="20" y="10" width="120" height="100" style="fill:var(--sky)"/>
+    ${t.extra || ""}
+    <circle cx="80" cy="55" r="15" style="fill:var(--person);stroke:var(--person-stroke);stroke-width:1.2"/>
+    <path d="M52 110 Q52 76 80 74 Q108 76 108 110 Z" style="fill:var(--person-2);stroke:var(--person-stroke);stroke-width:1.2"/>
+    <g>${slats}</g>
+    <rect x="18" y="8" width="124" height="104" rx="3" style="fill:none;stroke:var(--frame);stroke-width:var(--frame-w)"/>
+    <rect x="8" y="110" width="144" height="7" rx="2" style="fill:var(--frame)"/>
+    ${t.front || ""}`;
+}
+
+function allowedCount() { return CATS.filter(c => consent[c.id]).length; }
+
+function drawWindow() {
+  const n = allowedCount();
+  const scale = 1 - (n / CATS.length) * 0.86;
+  $("window").querySelectorAll(".slat").forEach(s => s.style.transform = `scaleY(${scale})`);
+  $("readout").textContent = SEES[n];
+}
+
+function resetConsent() {
+  consent = Object.fromEntries(CATS.map(c => [c.id, settings.defaults === "on"]));
+}
+
+function btn(label, action, kind) {
+  return `<button type="button" class="btn ${kind || ""}" data-action="${action}">${label}</button>`;
+}
+
+function renderBanner() {
+  const s = settings, words = s.wording, accent = s.buttons === "accent";
+  const banner = $("banner");
+  banner.className = "banner " + s.layout;
+  banner.hidden = step === "closed";
+  $("overlay").hidden = step === "closed" || s.layout !== "popup";
+  $("reopen").hidden = step !== "closed" || s.reopen !== "yes";
+  if (step === "closed") return;
+
+  let html;
+  if (step === "intro") {
+    const t = INTRO[words];
+    const choose = words === "plain" ? "Let me choose" : "Manage options";
+    const buttons = [];
+    if (s.reject === "first") buttons.push(btn("Reject all", "reject", accent ? "faint" : ""));
+    buttons.push(btn(choose, "choose", accent ? "faint" : ""));
+    buttons.push(btn("Accept all", "accept", accent ? "primary" : ""));
+    // Only promise a way back when the banner really leaves one on the page.
+    const later = s.reopen === "yes" ? `<p class="later">After you choose, a Cookie choices button stays in the bottom corner, so you can change your mind any time.</p>` : "";
+    html = `<h3>${t.title}</h3><p class="desc">${t.desc(THEMES[theme])}</p>${t.ask ? `<p class="desc">${t.ask}</p>` : ""}${later}<div class="actions">${buttons.join("")}</div>`;
+  } else {
+    const c = CATS[step], t = c[words], last = step === CATS.length - 1;
+    const next = last ? btn("Save my choices", "save", accent ? "faint" : "") : btn("Next", "next", accent ? "faint" : "");
+    const buttons = [btn("Back", "back", accent ? "faint" : ""), next];
+    if (accent) buttons.push(btn("Accept all", "accept", "primary"));
+    html = `<p class="step-count">Step ${step + 1} of ${CATS.length}</p>
+      <h3>${t.title}</h3><p class="desc">${t.desc(THEMES[theme])}</p>
+      <ul class="tools">${t.no ? `<li>If you say no: ${t.no}</li>` : ""}<li>${words === "plain" ? "Who sees it" : "Used for"}: ${t.who}</li></ul>
+      <label class="switch">${t.toggle}
+        <input type="checkbox" role="switch" data-cat="${c.id}" ${consent[c.id] ? "checked" : ""}></label>
+      <div class="actions">${buttons.join("")}</div>
+      <div class="dots">${CATS.map((_, i) => `<i class="${i === step ? "on" : ""}"></i>`).join("")}</div>`;
+  }
+  $("body").innerHTML = html;
+}
+
+function renderChecks() {
+  const passed = RULES.filter(r => r.pass(settings)).length;
+  $("score").textContent = `${passed} of ${RULES.length} fair`;
+  $("checks").innerHTML = RULES.map(r => {
+    const ok = r.pass(settings), [srcName, srcUrl] = SOURCES[r.src];
+    return `<li class="${ok ? "pass" : "fail"}"><details>
+      <summary><span class="mark" aria-label="${ok ? "Pass" : "Fail"}">${ok ? ICON.check : ICON.x}</span>${r.title}<span class="chev">${ICON.chev}</span></summary>
+      <p class="why">${r.why}<br><a href="${srcUrl}" target="_blank" rel="noopener">${srcName}</a></p>
+    </details></li>`;
+  }).join("");
+}
+
+function renderSettings() {
+  $("settings").innerHTML = CONTROLS.map(c => `
+    <fieldset class="control"><legend>${c.label}</legend><div class="seg">
+      ${c.opts.map(([v, l]) => `<label><input type="radio" name="${c.key}" value="${v}" ${settings[c.key] === v ? "checked" : ""}>${l}</label>`).join("")}
+    </div></fieldset>`).join("");
+}
+
+function renderStyle() {
+  $("style").innerHTML = Object.entries(THEMES).map(([k, t]) =>
+    `<label><input type="radio" name="style" value="${k}" ${theme === k ? "checked" : ""}>${t.label}</label>`).join("");
+}
+
+// Changing the style keeps the person's choices: only the look and the website change.
+function applyTheme() {
+  const t = THEMES[theme];
+  $("browser").dataset.theme = theme;
+  $("url").textContent = t.url;
+  $("site").innerHTML = t.site;
+  $("fits").textContent = t.fits;
+  buildWindow();
+  drawWindow();
+  renderBanner();
+}
+
+function restart() {
+  resetConsent();
+  step = "intro";
+  renderBanner();
+  drawWindow();
+  renderChecks();
+}
+
+$("style").addEventListener("change", e => { theme = e.target.value; applyTheme(); });
+
+$("settings").addEventListener("change", e => {
+  settings[e.target.name] = e.target.value;
+  restart();
+});
+
+document.querySelectorAll("[data-preset]").forEach(b => b.addEventListener("click", () => {
+  settings = { ...PRESETS[b.dataset.preset] };
+  renderSettings();
+  restart();
+}));
+
+$("replay").addEventListener("click", restart);
+
+$("reopen").addEventListener("click", () => {
+  step = "intro";
+  renderBanner();
+  drawWindow();
+});
+
+$("banner").addEventListener("change", e => {
+  if (!e.target.dataset.cat) return;
+  consent[e.target.dataset.cat] = e.target.checked;
+  drawWindow();
+});
+
+$("banner").addEventListener("click", e => {
+  const action = e.target.closest("[data-action]")?.dataset.action;
+  if (!action) return;
+  const setAll = v => CATS.forEach(c => consent[c.id] = v);
+  if (action === "accept") { setAll(true); step = "closed"; }
+  if (action === "reject") { setAll(false); step = "closed"; }
+  if (action === "choose") step = 0;
+  if (action === "next") step++;
+  if (action === "back") step = step === 0 ? "intro" : step - 1;
+  if (action === "save") step = "closed";
+  drawWindow();
+  renderBanner();
+  if (step === "closed") $("reopen").hidden || $("reopen").focus();
+  else $("banner").querySelector(".btn")?.focus({ preventScroll: true });
+});
+
+renderStyle();
+renderSettings();
+resetConsent();
+applyTheme();
+renderChecks();
+</script>
+</body>
+</html>
