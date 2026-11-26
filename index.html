@@ -318,7 +318,7 @@
         </div>
         <button type="button" class="reopen" id="reopen" hidden>
           <svg viewBox="0 0 28 28" aria-hidden="true"><circle cx="14" cy="14" r="14" style="fill:var(--b-winbg)"/><rect x="7" y="7" width="14" height="14" rx="1" style="fill:var(--slat);stroke:var(--frame);stroke-width:1.5"/><path d="M8 10.5h12M8 13.5h12M8 16.5h12" style="stroke:var(--slat-edge);stroke-width:1"/></svg>
-          Cookie choices
+          Your privacy choices
         </button>
       </div>
 
@@ -513,7 +513,7 @@ function renderBanner() {
     buttons.push(btn(choose, "choose", accent ? "faint" : ""));
     buttons.push(btn("Accept all", "accept", accent ? "primary" : ""));
     // Only promise a way back when the banner really leaves one on the page.
-    const later = s.reopen === "yes" ? `<p class="later">After you choose, a Cookie choices button stays in the bottom corner, so you can change your mind any time.</p>` : "";
+    const later = s.reopen === "yes" ? `<p class="later">After you choose, a “Your privacy choices” button stays in the bottom corner, so you can change your mind any time.</p>` : "";
     html = `<h3>${t.title}</h3><p class="desc">${t.desc(THEMES[theme])}</p>${t.ask ? `<p class="desc">${t.ask}</p>` : ""}${later}<div class="actions">${buttons.join("")}</div>`;
   } else {
     const c = CATS[step], t = c[words], last = step === CATS.length - 1;
