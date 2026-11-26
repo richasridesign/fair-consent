@@ -441,7 +441,7 @@ const RULES = [
   { title: "Plain words", pass: s => s.wording === "plain", src: "deceptive",
     why: "\"Improve your experience\" hides what happens. Say \"count your visits\" or \"ads that follow you\"." },
   { title: "The page stays usable", pass: s => s.layout !== "popup", src: "cnil",
-    why: "A popup that blocks the whole page pressures people to click anything just to get through." },
+    why: "A popup that blocks the page pushes people to click the quickest button. Regulators go further: blocking the site unless you accept (a cookie wall) can make consent invalid." },
   { title: "You can change your mind later", pass: s => s.reopen === "yes", src: "gdpr7",
     why: "Taking consent back should be as easy as giving it, so a small button stays on the page." },
 ];
